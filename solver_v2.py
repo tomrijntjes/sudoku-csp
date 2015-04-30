@@ -55,22 +55,32 @@ class Solver:
 		solution = [0] * 81
 		depth = 0
 		k = 0
+		
+		
+		
 		while depth < 81:
 			
 			while variables[depth] == []:
-				variables[depth] = OLDvariables[depth][:]
+				
+				if depth < 10:
+					print depth
+				variables[depth] = list(OLDvariables[depth])
+				
 				solution[depth] = 0
-				variables[depth -1].remove(variables[depth -1][k])
+				variables[depth -1] = variables[depth-1][1:]
+				#variables[depth -1].remove(variables[depth -1][0])
 				depth -=1
+				
 			
-			solution[depth] = variables[depth][k]
+			solution[depth] = variables[depth][0]
 			if self.check_constraints(constraints, solution):
 				depth +=1
 			else:
-				variables[depth].remove(variables[depth][k])
-			print solution
+				variables[depth].remove(variables[depth][0])
+			#print solution
 		
 		self.display(solution)
+		
 		return solution
 		
 		
