@@ -13,6 +13,7 @@
 
 import time, random
 from collections import Counter,OrderedDict
+from itertools import chain
 
 class Solver():
   def __init__(self,searchAlgorithm='Depth First',variableOrdening='Minimum remaining values',valueOrdening=None):
@@ -189,9 +190,14 @@ class SolverValueFirst(Solver):
 
       def sortValues(self,domain,values):
           "sort values based on frequency in given values"
+          if len(domain)==1:
+              return domain
           givens = (values[s] for s in self.squares if len(values[s]) == 1)
           filtered = filter(lambda v: v in domain, givens)
-          return list(OrderedDict.fromkeys(sorted(filtered, key=Counter(filtered).get, reverse=True)))
+          "sometimes members of the domain never occur in the solved squares"
+          "a bit of a hack: we add the domain to the search space once"
+          space = chain(filtered,(char for char in domain))
+          return list(x[0] for x in (Counter(space).most_common()))
 
 
 

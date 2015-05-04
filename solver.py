@@ -6,11 +6,55 @@ class Solver:
 			#every square can take only one value
 
 
+	def create_constraints(self):
+
+		#rows
+		constraints = []
+		var = 1;
+		for i in range(0,9):
+			sublist = []
+			for j in range(0,9):
+				sublist.append(var)
+				var +=1
+			constraints.append(sublist)
+
+		print(constraints)
+		#columns
+
 	def parse_grid(self,grid):
-		chars = [c for c in grid if c.isdigit() or c in "0."]
+		chars = list()
+		for c in grid:
+			if c.isdigit():
+				chars.append([int(c)])
+			if c == ".":
+				chars.append([x for x in range(1,10)])
 		assert len(chars) == 9 ** 2
+		return chars
+
 		matrix = list(self.chunk(chars))
 		return matrix
+
+	def constraints(self):
+		pass
+
+	def check_constraints(self):
+		for sublist in self.constraints:
+
+			for variable in sublist:
+					for variable2 in sublist:
+						if chars(variable) == chars(variable2):
+							return false
+
+
+			return OneHot()
+
+		return violation
+
+	def OneHot(self):
+		return len(set(a)) == len(a)
+
+
+
 
 	def chunk(self,charlist):
 		for i in range(0,81,9):
