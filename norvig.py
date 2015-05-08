@@ -13,11 +13,12 @@
 
 import time, random
 from collections import Counter,OrderedDict
-from itertools import chain
+import itertools
 
 class Solver():
-  def __init__(self,searchAlgorithm='Depth First',variableOrdening='Minimum remaining values',valueOrdening=None):
-    self.searchAlgorithm = searchAlgorithm
+  def __init__(self,variableHeuristic='Minimum remaining values',valueHeuristic=None):
+    self.variableHeuristic = variableHeuristic
+    self.valueHeuristic = valueHeuristic
     self.digits   = '123456789'
     self.rows     = 'ABCDEFGHI'
     self.cols     = self.digits
@@ -112,11 +113,33 @@ class Solver():
       if all(len(values[s]) == 1 for s in self.squares):
           return values ## Solved!
       ## Chose the unfilled square s with the fewest possibilities
-      n,s = min((len(values[s]), s) for s in self.squares if len(values[s]) > 1)
+      if self.variableHeuristic == 'Minimum Remaining Values':
+          n,s = min((len(values[s]), s) for s in self.squares if len(values[s]) > 1)
+      elif self.variableHeuristic == 'Random':
+          n,s = random.choice([((values[s]), s) for s in self.squares if len(values[s]) > 1])
+      else:
+          print(self.variableHeuristic)
+          raise ValueError('no supported variable heuristic selected')
       return self.some(self.search(self.assign(values.copy(), s, d))
-                  for d in values[s])
+                  for d in self.sortValues(values[s],values,s))
 
-  ################ Utilities
+  def sortValues(self,domain,values,s):
+      "sort values based on frequency in given values"
+      if self.valueHeuristic == None:
+          return domain
+      if len(domain)==1:
+          return domain
+      peers = [values[s2] for s2 in self.peers[s]]
+      flat = itertools.chain.from_iterable(peers)
+      tally = list(Counter(flat).most_common())
+      if self.valueHeuristic == 'Least Constraining Value':
+          reverse = tally[::-1]
+          return [x[0] for x in reverse if x[0] in domain]
+      if self.valueHeuristic == 'Most Constraining Value':
+          return [x[0] for x in tally if x[0] in domain]
+      else:
+          raise ValueError('no supported value heuristic selected')
+   ################ Utilities
 
   def some(self,seq):
       "Return some element of seq that is true."
@@ -138,7 +161,7 @@ class Solver():
 
 
 
-  def solve_all(self,grids, name='', showif=0.000):
+  def solve_all(self,grids, name='', showif=None):
       """Attempt to solve a sequence of grids. Report results.
       When showif is a number of seconds, display puzzles that take longer.
       When showif is None, don't display any puzzles."""
@@ -155,8 +178,9 @@ class Solver():
       times, results = zip(*[time_solve(grid) for grid in grids])
       N = len(grids)
       if N > 1:
-          print "Solved %d of %d %s puzzles (avg %.2f secs (%d Hz), max %.2f secs)." % (
+          print "Solved %d of %d %s puzzles (avg %.4f secs (%d Hz), max %.4f secs)." % (
               sum(results), N, name, sum(times)/N, N/sum(times), max(times))
+          return times,results
 
   def solved(self,values):
       "A puzzle is solved if each unit is a permutation of the digits 1 to 9."
@@ -176,28 +200,7 @@ class Solver():
               return ''.join(values[s] if len(values[s])==1 else '.' for s in self.squares)
       return random_puzzle(N) ## Give up and make a new puzzle
 
-class SolverValueFirst(Solver):
-      def search(self,values):
-          "Using depth-first search and propagation, try all possible values."
-          if values is False:
-              return False ## Failed earlier
-          if all(len(values[s]) == 1 for s in self.squares):
-              return values ## Solved!
-          ## Chose the unfilled square s with the fewest possibilities
-          n,s = min((len(values[s]), s) for s in self.squares if len(values[s]) > 1)
-          return self.some(self.search(self.assign(values.copy(), s, d))
-                      for d in self.sortValues(values[s],values))
 
-      def sortValues(self,domain,values):
-          "sort values based on frequency in given values"
-          if len(domain)==1:
-              return domain
-          givens = (values[s] for s in self.squares if len(values[s]) == 1)
-          filtered = filter(lambda v: v in domain, givens)
-          "sometimes members of the domain never occur in the solved squares"
-          "a bit of a hack: we add the domain to the search space once"
-          space = chain(filtered,(char for char in domain))
-          return list(x[0] for x in (Counter(space).most_common()))
 
 
 

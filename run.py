@@ -1,31 +1,31 @@
-from solver_v2 import Solver
+from norvig import Solver
+import cProfile
+import numpy
+import sys
 
-s = Solver()
 
-#s.display(s.parse_grid(s.example))
 
-constraints = s.construct_constraints()
-variables = s.parse_grid(s.example)
-propagates_variables = s.propagate(constraints, variables)
-#propagates_variablesOLD = list(propagates_variables)
+def main(s,files):
+    for file in files:
+        with open(file) as f:
+            times,results = s.solve_all([x for x in f.read().strip().split('\n') if len(x)>1])
+            print("Mean runtime: {0}".format(numpy.mean(times)))
+            print("Standard Deviation: {0}".format(numpy.std(times)))
 
-propagates_OLDvariables = []
-for element in variables:
-    propagates_OLDvariables.append(list(element))
-    
-#OLDvariables = list(variables)
-
-'''
-print id(OLDvariables[0])
-print id(variables[0])
-'''
-'''
-print propagates_variables
-print propagates_variablesOLD
-propagates_variables.remove(propagates_variables[0])
-print propagates_variables
-print propagates_variablesOLD
-'''
-
-#s.solve(constraints, variables, OLDvariables)
-s.solve(constraints, propagates_variables, propagates_OLDvariables)
+if __name__ == '__main__':
+    files = sys.argv[1:]
+    if len(files)<1:
+        files = ['sudoku_training.txt']
+    print(files)
+    profile = cProfile.Profile()
+    solvers = dict()
+    solvers['randrand'] = Solver('Random',None)
+    solvers['randleastconstr'] = Solver('Random','Least Constraining Value')
+    solvers['randmostconstr'] = Solver('Random','Most Constraining Value')
+    solvers['minremainrand'] = Solver('Minimum Remaining Values',None)
+    solvers['minremainleastconstr'] = Solver('Minimum Remaining Values','Least Constraining Value')
+    solvers['minremainmostconstr'] = Solver('Minimum Remaining Values','Most Constraining Value')
+    for name,solver in solvers.iteritems():
+        print 'Running solver {0}...'.format(name)
+        profile.runcall(main,solver,files)
+        profile.dump_stats('profiles/'+name+".profile")
